@@ -11,7 +11,6 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.nio.file.Files
 import javax.swing.*
-import javax.swing.filechooser.FileSystemView
 
 class BuildTaskHandler (
     private val selectBuildTaskDropdown: JComboBox<String>,
