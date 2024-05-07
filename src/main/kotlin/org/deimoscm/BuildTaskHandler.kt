@@ -94,7 +94,7 @@ class BuildTaskHandler (
                 cd "$wkDir/src/resources"
                 jar uf "$wkDir/build/jar/${individualProjectSettings.jarName}.jar" ./*
                 """ else ""
-            }
+                }
             """.trimIndent())
             Runtime.getRuntime().exec("chmod +x $wkDir/build/ jar.sh").waitFor()
             Runtime.getRuntime().exec("sh $wkDir/build/jar.sh").also {
@@ -105,16 +105,19 @@ class BuildTaskHandler (
     }
 
     fun generateProjectStructure() {
-        val latestLibDir = File(libInstallationPath)
-        if (latestLibDir.exists() && latestLibDir.listFiles()?.size == 1) {
+        var latestLib: File? = null
+        if (File(libInstallationPath).isDirectory)
+            latestLib = File(libInstallationPath).listFiles()?.get(0)
+        else if (libInstallationPath.endsWith(".jar"))
+            latestLib = File(libInstallationPath)
+        if (latestLib!!.exists()) {
             // generates directories and config file and copies lib over
             File("$wkDir/src/java").mkdirs()
             File("$wkDir/src/resources").mkdirs()
             File("$wkDir/lib/").mkdirs()
-            val fileToCopy = latestLibDir.listFiles()?.get(0)!!
-            val fileInLibFolder = File("$wkDir/lib/${fileToCopy.name}")
+            val fileInLibFolder = File("$wkDir/lib/${latestLib.name}")
             if (fileInLibFolder.exists()) fileInLibFolder.delete()
-            Files.copy(fileToCopy.toPath(), fileInLibFolder.toPath())
+            Files.copy(latestLib.toPath(), fileInLibFolder.toPath())
             individualProjectSettings.ensureFileExists()
         } else {
             // generates frame to inform that the operation failed

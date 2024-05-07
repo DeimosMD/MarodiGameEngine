@@ -6,20 +6,20 @@ import java.io.File
 interface XMLFileManager {
 
     fun writeToConfigFile() {
-        if (getFile().exists()) {
-            getFile().writeText(XmlMapper().writeValueAsString(this))
+        if (file().exists()) {
+            file().writeText(XmlMapper().writeValueAsString(this))
         }
     }
 
     fun ensureFileExists()  {
-        if (!getFile().exists()) {
-            getFile().parentFile.mkdirs()
-            getFile().createNewFile()
+        if (!file().exists()) {
+            file().parentFile.mkdirs()
+            file().createNewFile()
             writeToConfigFile()
         }
     }
 
     fun readFromConfigFile()
 
-    fun getFile(): File
+    fun file(): File
 }

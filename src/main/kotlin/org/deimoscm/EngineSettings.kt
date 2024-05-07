@@ -5,13 +5,14 @@ import java.io.File
 
 class EngineSettings : XMLFileManager {
 
-    // configurable options
+    // configurable options under engine settings
     var usesCustomLibInstallation = false
     var customLibInstallationPath: String = defaultLibInstallationPath
     var updateLibOnBuildTask = true
 
-    // other saved info
+    // other saved settings
     var latestWkDir: String = wkDir
+    var latestBuildTask: Int = 0
 
     private val file: File = File("$appdataPath/config.xml")
 
@@ -20,16 +21,17 @@ class EngineSettings : XMLFileManager {
     }
 
     override fun readFromConfigFile() {
-        if (file.exists()) {
-            val v: EngineSettings = XmlMapper().readValue(file.readText(), this.javaClass)
+        if (file().exists()) {
+            val v: EngineSettings = XmlMapper().readValue(file().readText(), this.javaClass)
             usesCustomLibInstallation = v.usesCustomLibInstallation
             customLibInstallationPath = v.customLibInstallationPath
             updateLibOnBuildTask = v.updateLibOnBuildTask
             latestWkDir = v.latestWkDir
+            latestBuildTask = v.latestBuildTask
         }
     }
 
-    override fun getFile(): File {
+    override fun file(): File {
         return file
     }
 }

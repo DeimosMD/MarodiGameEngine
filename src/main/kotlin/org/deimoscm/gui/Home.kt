@@ -14,7 +14,7 @@ class Home : JPanel(BorderLayout()) {
     private val executeTaskButton: JButton = JButton("Execute Build Task")
     private val selectWkDirButton: JButton = JButton("Select Working Directory")
     private val generateProjectStructureButton: JButton = JButton("Generate Project Structure")
-    private val selectBuildTaskDropdown: JComboBox<String> = JComboBox(buildTasks)
+    val selectBuildTaskDropdown: JComboBox<String> = JComboBox(buildTasks)
     private val topBar: JPanel = JPanel(BorderLayout())
     private val wkDirSection = JPanel(FlowLayout())
     private val buildTaskSection = JPanel()
@@ -42,8 +42,12 @@ class Home : JPanel(BorderLayout()) {
     private val useCustomLibPathCheckBox: JCheckBox = JCheckBox()
     private val useCustomLibPathSection = JPanel()
     private val useCustomLibPathLabel = JLabel("Use custom lib path?")
-    private val customLibPathTextField = JTextField().also {it.isEnabled = false}
+    private val customLibPathTextField = JTextField().also {it.isEnabled = false; it.text = libInstallationPath}
+    private val updateLibOnBuildTaskCheckBox: JCheckBox = JCheckBox()
+    private val updateLibOnBuildTaskSection = JPanel()
+    private val updateLibOnBuildTaskLabel = JLabel("Update lib on build task?")
     private val saveEngineSettingsButton = JButton("Save Engine Settings")
+    private var customLibPathEntry = engineSettings.customLibInstallationPath
 
     init {
         this.add(topBar, BorderLayout.NORTH)
@@ -68,6 +72,7 @@ class Home : JPanel(BorderLayout()) {
         mainClassSection.background = darkGrey1
         gameClassSection.background = darkGrey1
         useCustomLibPathSection.background = darkGrey1
+        updateLibOnBuildTaskSection.background = darkGrey1
         // project management section
         leftContentSection.add(JLabel("Project Management").also {
             it.font = headerFont
@@ -114,10 +119,14 @@ class Home : JPanel(BorderLayout()) {
         leftContentSection.add(useCustomLibPathSection)
         leftContentSection.add(customLibPathTextField)
         leftContentLayout.putConstraint(SpringLayout.NORTH, customLibPathTextField, 10, SpringLayout.SOUTH, useCustomLibPathSection)
+        leftContentSection.add(updateLibOnBuildTaskSection)
+        leftContentLayout.putConstraint(SpringLayout.NORTH, updateLibOnBuildTaskSection, 20, SpringLayout.SOUTH, customLibPathTextField)
         leftContentSection.add(saveEngineSettingsButton)
-        leftContentLayout.putConstraint(SpringLayout.NORTH, saveEngineSettingsButton, 20, SpringLayout.SOUTH, customLibPathTextField)
+        leftContentLayout.putConstraint(SpringLayout.NORTH, saveEngineSettingsButton, 20, SpringLayout.SOUTH, updateLibOnBuildTaskSection)
         useCustomLibPathSection.add(useCustomLibPathLabel)
         useCustomLibPathSection.add(useCustomLibPathCheckBox)
+        updateLibOnBuildTaskSection.add(updateLibOnBuildTaskLabel)
+        updateLibOnBuildTaskSection.add(updateLibOnBuildTaskCheckBox)
         customLibPathTextField.preferredSize = Dimension(250, 30)
 
         gameGraphicsPanelSection.background = Color.BLACK
@@ -128,13 +137,9 @@ class Home : JPanel(BorderLayout()) {
             val fileChooser = JFileChooser(wkDir)
             fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
             if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                wkDir = fileChooser.selectedFile.absolutePath
-                wkDirLabel.text = wkDir
-                individualProjectSettings = IndividualProjectSettings()
-                individualProjectSettings.readFromConfigFile()
-                jarNameTextField.text = individualProjectSettings.jarName
-                mainClassTextField.text = individualProjectSettings.mainClass
-                gameClassTextField.text = individualProjectSettings.gameClass
+                openWkDir(fileChooser.selectedFile.absolutePath)
+                engineSettings.latestWkDir = wkDir
+                engineSettings.writeToConfigFile()
             }
         }
 
@@ -165,7 +170,51 @@ class Home : JPanel(BorderLayout()) {
         }
 
         saveEngineSettingsButton.addActionListener {
+            engineSettings.usesCustomLibInstallation = useCustomLibPathCheckBox.isSelected
+            if (useCustomLibPathCheckBox.isSelected)
+                engineSettings.customLibInstallationPath = customLibPathTextField.text
+            else
+                engineSettings.customLibInstallationPath = customLibPathEntry
+            engineSettings.updateLibOnBuildTask = updateLibOnBuildTaskCheckBox.isSelected
             engineSettings.writeToConfigFile()
         }
+
+        selectBuildTaskDropdown.addActionListener {
+            engineSettings.latestBuildTask = selectBuildTaskDropdown.selectedIndex
+            engineSettings.writeToConfigFile()
+        }
+
+        useCustomLibPathCheckBox.addActionListener {
+            if (useCustomLibPathCheckBox.isSelected) {
+                customLibPathTextField.isEnabled = true
+                customLibPathTextField.text = customLibPathEntry
+            } else {
+                customLibPathTextField.isEnabled = false
+                customLibPathEntry = customLibPathTextField.text
+                customLibPathTextField.text = defaultLibInstallationPath
+            }
+            libInstallationPath = customLibPathTextField.text
+        }
+    }
+
+    fun openWkDir(path: String) {
+        wkDir = path
+        wkDirLabel.text = wkDir
+        individualProjectSettings = IndividualProjectSettings()
+        individualProjectSettings.readFromConfigFile()
+        jarNameTextField.text = individualProjectSettings.jarName
+        mainClassTextField.text = individualProjectSettings.mainClass
+        gameClassTextField.text = individualProjectSettings.gameClass
+    }
+
+    fun loadConfigurableOptionsUnderEngineSettings() {
+        useCustomLibPathCheckBox.isSelected = engineSettings.usesCustomLibInstallation
+        if (useCustomLibPathCheckBox.isSelected) {
+            customLibPathTextField.text = engineSettings.customLibInstallationPath
+            customLibPathTextField.isEnabled = true
+        } else
+            customLibPathEntry = engineSettings.customLibInstallationPath
+        libInstallationPath = customLibPathTextField.text
+        updateLibOnBuildTaskCheckBox.isSelected = engineSettings.updateLibOnBuildTask
     }
 }

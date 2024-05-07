@@ -12,15 +12,15 @@ class IndividualProjectSettings : XMLFileManager {
     private val file: File = File("$wkDir/$configFileName")
 
     override fun readFromConfigFile() {
-        if (file.exists()) {
-            val v: IndividualProjectSettings = XmlMapper().readValue(file.readText(), this.javaClass)
+        if (file().exists()) {
+            val v: IndividualProjectSettings = XmlMapper().readValue(file().readText(), this.javaClass)
             mainClass = v.mainClass
             jarName = v.jarName
             gameClass = v.gameClass
         }
     }
 
-    override fun getFile(): File {
+    override fun file(): File {
         return file
     }
 }

@@ -22,10 +22,15 @@ fun main() {
     FlatDarculaLaf.setup()
     setUIFont(FontUIResource(Font(Font.MONOSPACED, Font.PLAIN, 15)))
     val frame = JFrame("Marodi Game Engine")
-    frame.contentPane = Home()
+    val home = Home()
+    frame.contentPane = home
     frame.minimumSize = Dimension(1200, 800)
     frame.extendedState = frame.extendedState or JFrame.MAXIMIZED_BOTH
     frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+    engineSettings.readFromConfigFile()
+    home.openWkDir(engineSettings.latestWkDir)
+    home.selectBuildTaskDropdown.selectedIndex = engineSettings.latestBuildTask
+    home.loadConfigurableOptionsUnderEngineSettings()
     frame.isVisible = true
 }
 
