@@ -24,6 +24,11 @@ class BuildTaskHandler (
         object : SwingWorker<Void, Void>() {
             @Throws(Exception::class)
             override fun doInBackground(): Void? {
+                if (engineSettings.updateLibOnBuildTask)
+                    getLib()!!.let {
+                        if (it.exists())
+                            updateLib(it)
+                    }
                 when (selectBuildTaskDropdown.selectedIndex) {
                     0 -> {
                         runInPanelBelow()
@@ -49,16 +54,19 @@ class BuildTaskHandler (
 
     private fun runInPanelBelow() {
         buildJar()
-        val game = getGameClass().getDeclaredConstructor()?.newInstance() as Game
+        val game = getGameClass().getDeclaredConstructor().newInstance() as Game
         homeFrame.gameGraphicsPanelSection.removeAll()
         homeFrame.gameGraphicsPanelSection.add(game.runInPanel())
         game.launch()
+        game.waitUntilClosed()
     }
 
     private fun runInNewWindow() {
         buildJar()
-        val game = getGameClass().getDeclaredConstructor()?.newInstance() as Game
+        val game = getGameClass().getDeclaredConstructor().newInstance() as Game
+        game.runInNewWindow()
         game.launch()
+        game.waitUntilClosed()
     }
 
     private fun buildJar() {
@@ -105,19 +113,13 @@ class BuildTaskHandler (
     }
 
     fun generateProjectStructure() {
-        var latestLib: File? = null
-        if (File(libInstallationPath).isDirectory)
-            latestLib = File(libInstallationPath).listFiles()?.get(0)
-        else if (libInstallationPath.endsWith(".jar"))
-            latestLib = File(libInstallationPath)
-        if (latestLib!!.exists()) {
+        val latestLib: File = getLib()!!
+        if (latestLib.exists()) {
             // generates directories and config file and copies lib over
             File("$wkDir/src/java").mkdirs()
             File("$wkDir/src/resources").mkdirs()
             File("$wkDir/lib/").mkdirs()
-            val fileInLibFolder = File("$wkDir/lib/${latestLib.name}")
-            if (fileInLibFolder.exists()) fileInLibFolder.delete()
-            Files.copy(latestLib.toPath(), fileInLibFolder.toPath())
+            updateLib(latestLib)
             individualProjectSettings.ensureFileExists()
         } else {
             // generates frame to inform that the operation failed
@@ -125,7 +127,7 @@ class BuildTaskHandler (
             f.layout = BorderLayout()
             val l = JLabel(
                 "<html>" +
-                        "The structure generation operation failed because there is not a release of the Marodi Game Library in $libInstallationPath"
+                        "The structure generation operation failed because there is not a release of the Marodi Game Library in/at $libInstallationPath"
                         + "</html>"
             )
             f.add(l, BorderLayout.NORTH)
@@ -138,6 +140,26 @@ class BuildTaskHandler (
             f.isResizable = false
             f.isVisible = true
         }
+    }
+
+    private fun getLib(): File? {
+        val fileOfInstallPath = File(libInstallationPath)
+        return if (fileOfInstallPath.isDirectory && fileOfInstallPath.listFiles()?.size!! > 0)
+            fileOfInstallPath.listFiles()?.get(0)
+        else if (libInstallationPath.endsWith(".jar"))
+            fileOfInstallPath
+        else
+            File("$libInstallationPath.jar")
+    }
+
+    private fun updateLib(latestLib: File) {
+        val fileInLibFolder = File("$wkDir/lib/${latestLib.name}")
+        if (fileInLibFolder.exists()) fileInLibFolder.delete()
+        if (latestLib.exists()) {
+            if (!fileInLibFolder.parentFile.exists()) fileInLibFolder.parentFile.mkdirs()
+            Files.copy(latestLib.toPath(), fileInLibFolder.toPath())
+        }
+        else println("lib file '$latestLib' doesn't exist!")
     }
 }
 
